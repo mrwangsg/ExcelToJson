@@ -22,7 +22,7 @@ public class TreeStart {
                 "userName", "passWord",
                 "innerDemo.innerName", "innerDemo.innerPass",
                 "outDemo.outName", "outDemo.outPass",
-                "listDemo[0].listName", "listDemo[0].listPass"
+                "listDemo[0].list.name","listDemo[0].list.pass",
         };
         JSONObject rootNodeJson = new JSONObject();
 
@@ -140,18 +140,36 @@ public class TreeStart {
                 String nameNode = nextNode.getNameNode();
                 String typeNode = nextNode.getTypeNode();
 
-                if (typeNode == "attr") {
-                    indexJsonObj.put(nameNode, "attr");
-                } else if (typeNode == "obj") {
-                    JSONObject nextJsonObject = new JSONObject();
+                if (indexJsonObj != null){
+                    if (typeNode == "attr") {
+                        indexJsonObj.put(nameNode, typeNode);
+                    } else if (typeNode == "obj") {
+                        JSONObject nextJsonObject = new JSONObject();
 
-                    indexJsonObj.put(nameNode, nextJsonObject);
-                    levelIteratorTree(nextNode, nextJsonObject, null);
-                } else if (typeNode == "arr") {
-                    JSONArray nextJsonArray = new JSONArray();
+                        indexJsonObj.put(nameNode, nextJsonObject);
+                        levelIteratorTree(nextNode, nextJsonObject, null);
+                    } else if (typeNode == "arr") {
+                        JSONArray nextJsonArray = new JSONArray();
 
-                    indexJsonArr.add(nextJsonArray);
-                    levelIteratorTree(nextNode, null, nextJsonArray);
+                        indexJsonObj.put(nameNode, nextJsonArray);
+                        levelIteratorTree(nextNode, null, nextJsonArray);
+                    }
+                }else if (indexJsonArr != null){
+                    if (typeNode == "attr") {
+                        JSONObject nextJsonObject = (JSONObject) indexJsonArr.get(0);
+
+                        nextJsonObject.put(nameNode, typeNode);
+                    } else if (typeNode == "obj") {
+                        JSONObject nextJsonObject = new JSONObject();
+
+                        indexJsonArr.add(nextJsonObject);
+                        levelIteratorTree(nextNode, nextJsonObject, null);
+                    } else if (typeNode == "arr") {
+                        JSONArray nextJsonArray = new JSONArray();
+
+                        indexJsonArr.add(nextJsonArray);
+                        levelIteratorTree(nextNode, null, nextJsonArray);
+                    }
                 }
             }
         }
