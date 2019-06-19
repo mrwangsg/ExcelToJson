@@ -1,8 +1,6 @@
 package com.sgwang;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * @创建人 sgwang
@@ -14,7 +12,8 @@ import java.util.List;
 public class Node {
     private String nameNode;                                // 节点名
     private String typeNode;                                // 节点类型 [attr obj arr]
-    private List<Node> childrenNode = new ArrayList<Node>();    // 子节点
+    private List<Node> childrenNode = new ArrayList<Node>();   // 子节点
+    private Set<String> arrSize = new TreeSet<String>(); // 仅针对数组类型节点 用于生成多个数组对象
 
     public Node() {
     }
@@ -40,17 +39,6 @@ public class Node {
         }
         return null;
     }
-
-//    /**
-//     * @描述 判断是否含有 孩子节点
-//     * @参数   Node node
-//     * @返回值  boolean
-//    */
-//    public boolean haveChildNode(){
-//        if (this.childrenNode.isEmpty())
-//            return false;
-//        return true;
-//    }
 
     /**
      * @描述 根据nodeName 判断是否存在该子节点
@@ -103,4 +91,11 @@ public class Node {
         this.childrenNode = childrenNode;
     }
 
+    public Set<String> getArrSize() {
+        return arrSize;
+    }
+
+    public void setArrSize(Set<String> arrSize) {
+        this.arrSize = arrSize;
+    }
 }

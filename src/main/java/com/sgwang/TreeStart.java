@@ -4,8 +4,10 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @创建人 sgwang
@@ -23,6 +25,7 @@ public class TreeStart {
                 "innerDemo.innerName", "innerDemo.innerPass",
                 "outDemo.outName", "outDemo.outPass",
                 "listDemo[0].list.name","listDemo[0].list.pass",
+                "listDemo[1].list.name","listDemo[1].list.pass",
         };
         JSONObject rootNodeJson = new JSONObject();
 
@@ -36,6 +39,17 @@ public class TreeStart {
     }
 
     public static void test() {
+        String test01 = "test[123]test";
+        System.out.println(test01.substring(test01.indexOf("["), test01.indexOf("]") + 1));
+        List<Node> list = new ArrayList<Node>();
+        list.add(new Node("node01", "arr"));
+        list.add(new Node("node02", "arr"));
+
+        System.out.println(JSON.toJSONString(list));
+
+        System.out.println(JSON.toJSONString(new Integer[]{1, 1, 1, 5}));
+
+
         Iterator<Node> iterator = rootNode.getChildrenNode().iterator();
         while (iterator.hasNext()) {
             Node node = iterator.next();
@@ -90,8 +104,10 @@ public class TreeStart {
 
             if (typedeNode == "arr") {
                 indexNodeName = indexStr.substring(0, indexStr.indexOf("["));
+                nextStr = indexStr.substring(indexStr.indexOf(".") + 1);
             } else if (typedeNode == "obj") {
                 indexNodeName = indexStr.substring(0, indexStr.indexOf("."));
+                nextStr = indexStr.substring(indexStr.indexOf(".") + 1);
             }
 
             if (indexNode.isExistChildNode(indexNodeName)) {
@@ -102,10 +118,9 @@ public class TreeStart {
                 indexNode.addChildNode(nextNode);
             }
 
-            if (typedeNode == "arr") {
-                nextStr = indexStr.substring(indexStr.indexOf("].") + 2);
-            } else if (typedeNode == "obj") {
-                nextStr = indexStr.substring(indexStr.indexOf(".") + 1);
+            if (typedeNode == "arr"){
+                // 用于记录 特别arr的 数组对象个数
+                signIndexArrSize(nextNode, indexStr);
             }
 
             buildNodeTree(nextNode, nextStr);
@@ -131,6 +146,8 @@ public class TreeStart {
         System.out.println("------------------------------------------------------------------------------");
         System.out.println("nameNode: " + indexNode.getNameNode() + "   typeNode: " + indexNode.getTypeNode());
         System.out.println("indexJsonObj: " + indexJsonObj + "   indexJsonArr: " + indexJsonArr);
+        if (indexNode.getTypeNode() == "arr")
+            System.out.println("arrSize: " + indexNode.getArrSize().size() +"个siez！");
 
         List<Node> childrenNode = indexNode.getChildrenNode();
         if (!childrenNode.isEmpty()) {
@@ -173,6 +190,17 @@ public class TreeStart {
                 }
             }
         }
+    }
+
+    /**
+     * @描述 用于记录 特别arr的节点 数组对象个数
+     * @参数   Node indexNode, String indexStr
+     * @返回值  void
+    */
+    public static void signIndexArrSize(Node indexNode, String indexStr){
+        String signSize = indexStr.substring(indexStr.indexOf("["), indexStr.indexOf("]") + 1);
+        Set<String> ret = indexNode.getArrSize();
+        ret.add(signSize);
     }
 
     /**
