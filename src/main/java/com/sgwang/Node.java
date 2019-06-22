@@ -12,6 +12,7 @@ import java.util.*;
 public class Node {
     private String nameNode;                                // 节点名
     private String typeNode;                                // 节点类型 [attr obj arr]
+    private String keyStr = "";                             // 用于映射Map值
     private List<Node> childrenNode = new ArrayList<Node>();   // 子节点
     private Set<String> arrSize = new TreeSet<String>(); // 仅针对数组类型节点 用于生成多个数组对象
 
@@ -21,6 +22,12 @@ public class Node {
     public Node(String nameNode, String typeNode) {
         this.nameNode = nameNode;
         this.typeNode = typeNode;
+    }
+
+    public Node(String nameNode, String typeNode, String keyStr) {
+        this.nameNode = nameNode;
+        this.typeNode = typeNode;
+        this.keyStr = keyStr;
     }
 
     /**
@@ -66,7 +73,6 @@ public class Node {
         this.childrenNode.add(node);
     }
 
-
     public String getNameNode() {
         return nameNode;
     }
@@ -81,6 +87,14 @@ public class Node {
 
     public void setTypeNode(String typeNode) {
         this.typeNode = typeNode;
+    }
+
+    public String getKeyStr() {
+        return keyStr;
+    }
+
+    public void setKeyStr(String keyStr) {
+        this.keyStr = keyStr;
     }
 
     public List<Node> getChildrenNode() {

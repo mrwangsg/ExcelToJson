@@ -2,10 +2,13 @@ package com.sgwang;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @创建人 sgwang
@@ -15,17 +18,12 @@ import java.util.Set;
  * @描述
  */
 public class JsonStart {
-    private static Node rootNode = new Node("root", "obj");
-    private static String[] typeNode = new String[]{"attr", "obj", "arr"};
+    private static Map<String, String> tempData;
 
     public static void main(String[] args) throws Exception {
-        String[] initStr = new String[]{
-                "userName", "passWord",
-                "innerDemo.innerName", "innerDemo.innerPass",
-                "outDemo.outName", "outDemo.outPass",
-                "listDemo[0].list.name", "listDemo[0].list.pass",
-                "listDemo[1].list.name", "listDemo[1].list.pass",
-        };
+        Map<String, String> initMap = TestData.getTestMapData();
+        Set<String> initStr = initMap.keySet();
+        JsonStart.tempData = initMap;
 
         Node rootNode = new Node("root", "obj");
         JSONObject rootObjJson = new JSONObject();
@@ -35,18 +33,17 @@ public class JsonStart {
 
     }
 
-
     /**
      * @描述 将字符串 转化为 树型结构
      * @参数 String[] initStr
      * @返回值 void
      */
-    public static void handlerTask(String[] initStr, Node rootNode, JSONObject rootObjJson) {
+    public static void handlerTask(Set<String> initStr, Node rootNode, JSONObject rootObjJson) {
 
         // 模拟循环 excel的列
         for (String indexStr : initStr) {
             // 切割字符串时 需要递归一下
-            buildNodeTree(indexStr, rootNode);
+            buildNodeTree(indexStr, indexStr, rootNode);
         }
 
         levelIteratorTree(rootNode, rootObjJson, null);
@@ -57,10 +54,10 @@ public class JsonStart {
      * @参数 Node indexNode && String indexStr
      * @返回值 void
      */
-    public static void buildNodeTree(String indexStr, Node indexNode) {
+    public static void buildNodeTree(String indexStr, String keyStr, Node indexNode) {
 
-        // 存在"." 说明类型为 obj || arr
-        if (indexStr.contains(".")) {
+        // 存在"." || "]" 说明类型为 obj || arr
+        if (indexStr.contains(".") || indexStr.contains("]")) {
             String indexNodeName = "";                  // 当前节点 名称
             String indexNodeType = diffType(indexStr);  // 区别节点 类型
             Node nextNode = null;                       // 下一child节点
@@ -68,7 +65,15 @@ public class JsonStart {
 
             if (indexNodeType == "arr") {
                 indexNodeName = indexStr.substring(0, indexStr.indexOf("["));
-                nextStr = indexStr.substring(indexStr.indexOf(".") + 1);
+
+                // 可能是基本类型数组 即不存在"."
+                if (indexStr.contains(".")) {
+                    nextStr = indexStr.substring(indexStr.indexOf(".") + 1);
+
+                    // 这一步 是为了实现 数组对对象 一对多
+                    String arrayNumberMarker = "$" + indexStr.substring(indexStr.indexOf("[") + 1, indexStr.indexOf("]")) + "$";
+                    nextStr = arrayNumberMarker + nextStr;
+                }
             } else if (indexNodeType == "obj") {
                 indexNodeName = indexStr.substring(0, indexStr.indexOf("."));
                 nextStr = indexStr.substring(indexStr.indexOf(".") + 1);
@@ -79,7 +84,7 @@ public class JsonStart {
             if (indexNode.isExistChildNode(indexNodeName)) {
                 nextNode = indexNode.getChildNodeName(indexNodeName);
             } else {
-                nextNode = new Node(indexNodeName, indexNodeType);
+                nextNode = new Node(indexNodeName, indexNodeType, keyStr);
                 indexNode.addChildNode(nextNode);
             }
 
@@ -88,14 +93,14 @@ public class JsonStart {
                 signIndexArrSize(nextNode, indexStr);
             }
 
-            buildNodeTree(nextStr, nextNode);
+            buildNodeTree(nextStr, keyStr, nextNode);
         } else {
             // 不存在"." 说明已经是尽头
             if (indexNode.isExistChildNode(indexStr)) {
                 // 如果已经存在不做处理
             } else {
                 // 如果不存在 新建Node节点 插入
-                indexNode.addChildNode(new Node(indexStr, "attr"));
+                indexNode.addChildNode(new Node(indexStr, "attr", keyStr));
             }
         }
 
@@ -108,47 +113,49 @@ public class JsonStart {
      */
     public static void levelIteratorTree(Node indexNode, JSONObject indexJsonObj, JSONArray indexJsonArr) {
         //  这里可以做构建 json的处理
-        System.out.println("------------------------------------------------------------------------------");
-        System.out.println("nameNode: " + indexNode.getNameNode() + "   typeNode: " + indexNode.getTypeNode());
-        System.out.println("indexJsonObj: " + indexJsonObj + "   indexJsonArr: " + indexJsonArr);
-        if (indexNode.getTypeNode() == "arr")
-            System.out.println("arrSize: " + indexNode.getArrSize().size() + "个siez！");
-
         List<Node> childrenNode = indexNode.getChildrenNode();
         if (!childrenNode.isEmpty()) {
             Iterator<Node> iterator = childrenNode.iterator();
             while (iterator.hasNext()) {
                 Node childNode = iterator.next();
-                String nameNode = childNode.getNameNode();
-                String typeNode = childNode.getTypeNode();
+                String childNameNode = childNode.getNameNode();
+                String childTypeNode = childNode.getTypeNode();
 
                 if (indexJsonObj != null) {
-                    if (typeNode == "attr") {
-                        indexJsonObj.put(nameNode, typeNode);
-                    } else if (typeNode == "obj") {
+                    if (childTypeNode == "attr") {
+                        String keyStr = childNode.getKeyStr();
+
+                        indexJsonObj.put(childNameNode, JsonStart.tempData.get(keyStr));
+                    } else if (childTypeNode == "obj") {
                         JSONObject nextObjJson = new JSONObject();
 
-                        indexJsonObj.put(nameNode, nextObjJson);
+                        indexJsonObj.put(childNameNode, nextObjJson);
                         levelIteratorTree(childNode, nextObjJson, null);
-                    } else if (typeNode == "arr") {
+                    } else if (childTypeNode == "arr") {
                         JSONArray nextArrJson = new JSONArray();
 
-                        indexJsonObj.put(nameNode, nextArrJson);
+                        indexJsonObj.put(childNameNode, nextArrJson);
                         levelIteratorTree(childNode, null, nextArrJson);
                     }
                 } else if (indexJsonArr != null) {
-                    if (typeNode == "attr") {
-                        JSONObject nextJsonObject = (JSONObject) indexJsonArr.get(0);
 
-                        nextJsonObject.put(nameNode, typeNode);
-                    } else if (typeNode == "obj") {
-                        for (int index = 0; index < indexNode.getArrSize().size(); index++) {
-                            JSONObject nextObjJson = new JSONObject();
+                    if (childTypeNode == "attr") {
+                        // 因为是array下 所以循环
+                        Iterator<String> iteratorInner = indexNode.getArrSize().iterator();
+                        while (iteratorInner.hasNext()) {
+                            // 这里是为了获取数组序号标记 其实主要还是消费完迭代器
+                            String arrayNumberMarker = iteratorInner.next();
+                            String keyStr = childNode.getKeyStr();
 
-                            indexJsonArr.add(nextObjJson);
-                            levelIteratorTree(childNode, nextObjJson, null);
+                            indexJsonArr.add(JsonStart.tempData.get(keyStr));
                         }
-                    } else if (typeNode == "arr") {
+                    } else if (childTypeNode == "obj") {
+                        JSONObject nextObjJson = new JSONObject();
+
+                        indexJsonArr.add(nextObjJson);
+                        levelIteratorTree(childNode, nextObjJson, null);
+
+                    } else if (childTypeNode == "arr") {
                         JSONArray nextArrJson = new JSONArray();
 
                         indexJsonArr.add(nextArrJson);
@@ -166,15 +173,16 @@ public class JsonStart {
      */
     public static String diffType(String indexStr) {
 
-        if (indexStr.contains(".")) {
-            // 继续判断 obj | arr
-            if (!indexStr.contains("]")) {
-                return "obj";
-            } else if (indexStr.indexOf(".") < indexStr.indexOf("]")) {
+        if (indexStr.contains(".") && indexStr.contains("]")) {
+            if (indexStr.indexOf(".") < indexStr.indexOf("]")) {
                 return "obj";
             } else {
                 return "arr";
             }
+        } else if (indexStr.contains(".")) {
+            return "obj";
+        } else if (indexStr.contains("]")) {
+            return "arr";
         } else {
             return "attr";
         }
