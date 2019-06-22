@@ -27,6 +27,8 @@ public class TestData {
                 put("listDemo[1].list.pass", "test");
                 put("strList[0]", "test01");
                 put("strList[1]", "test02");
+                put("listDemo[0].list.node[0].test.name", "listandlistName");
+                put("listDemo[0].list.node[0].test.pass", "listandlistPass");
             }
         };
 

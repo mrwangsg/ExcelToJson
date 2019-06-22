@@ -18,19 +18,22 @@ import java.util.concurrent.ConcurrentHashMap;
  * @描述
  */
 public class JsonStart {
-    private static Map<String, String> tempData;
+    private Map<String, String> tempData;
 
     public static void main(String[] args) throws Exception {
-        Map<String, String> initMap = TestData.getTestMapData();
-        Set<String> initStr = initMap.keySet();
-        JsonStart.tempData = initMap;
+        String jsonStr = new JsonStart().doStart(TestData.getTestMapData());
+        System.out.println(jsonStr);
+    }
+
+    public String doStart(Map<String, String> initMap){
+        this.tempData = initMap;
+        Set<String> initMapOfSet = initMap.keySet();
 
         Node rootNode = new Node("root", "obj");
         JSONObject rootObjJson = new JSONObject();
-        handlerTask(initStr, rootNode, rootObjJson);
+        handlerTask(initMapOfSet, rootNode, rootObjJson);
 
-        System.out.println(rootObjJson.toJSONString());
-
+        return rootObjJson.toJSONString();
     }
 
     /**
@@ -38,7 +41,7 @@ public class JsonStart {
      * @参数 String[] initStr
      * @返回值 void
      */
-    public static void handlerTask(Set<String> initStr, Node rootNode, JSONObject rootObjJson) {
+    public void handlerTask(Set<String> initStr, Node rootNode, JSONObject rootObjJson) {
 
         // 模拟循环 excel的列
         for (String indexStr : initStr) {
@@ -54,7 +57,7 @@ public class JsonStart {
      * @参数 Node indexNode && String indexStr
      * @返回值 void
      */
-    public static void buildNodeTree(String indexStr, String keyStr, Node indexNode) {
+    public void buildNodeTree(String indexStr, String keyStr, Node indexNode) {
 
         // 存在"." || "]" 说明类型为 obj || arr
         if (indexStr.contains(".") || indexStr.contains("]")) {
@@ -111,7 +114,7 @@ public class JsonStart {
      * @参数 Node indexNode
      * @返回值 void
      */
-    public static void levelIteratorTree(Node indexNode, JSONObject indexJsonObj, JSONArray indexJsonArr) {
+    public void levelIteratorTree(Node indexNode, JSONObject indexJsonObj, JSONArray indexJsonArr) {
         //  这里可以做构建 json的处理
         List<Node> childrenNode = indexNode.getChildrenNode();
         if (!childrenNode.isEmpty()) {
@@ -125,7 +128,7 @@ public class JsonStart {
                     if (childTypeNode == "attr") {
                         String keyStr = childNode.getKeyStr();
 
-                        indexJsonObj.put(childNameNode, JsonStart.tempData.get(keyStr));
+                        indexJsonObj.put(childNameNode, this.tempData.get(keyStr));
                     } else if (childTypeNode == "obj") {
                         JSONObject nextObjJson = new JSONObject();
 
@@ -147,7 +150,7 @@ public class JsonStart {
                             String arrayNumberMarker = iteratorInner.next();
                             String keyStr = childNode.getKeyStr();
 
-                            indexJsonArr.add(JsonStart.tempData.get(keyStr));
+                            indexJsonArr.add(this.tempData.get(keyStr));
                         }
                     } else if (childTypeNode == "obj") {
                         JSONObject nextObjJson = new JSONObject();
@@ -171,7 +174,7 @@ public class JsonStart {
      * @参数 String
      * @返回值 String 备注：arr | obj | attr
      */
-    public static String diffType(String indexStr) {
+    public String diffType(String indexStr) {
 
         if (indexStr.contains(".") && indexStr.contains("]")) {
             if (indexStr.indexOf(".") < indexStr.indexOf("]")) {
@@ -193,7 +196,7 @@ public class JsonStart {
      * @参数 Node indexNode, String indexStr
      * @返回值 void
      */
-    public static void signIndexArrSize(Node indexNode, String indexStr) {
+    public void signIndexArrSize(Node indexNode, String indexStr) {
         String signSize = indexStr.substring(indexStr.indexOf("["), indexStr.indexOf("]") + 1);
         Set<String> ret = indexNode.getArrSize();
         ret.add(signSize);
